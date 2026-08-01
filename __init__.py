@@ -16,7 +16,7 @@ class HardcoverMetadata(Source):
         'series_index', 'languages'
     ])
 
-    HARDCOVER_API_URL = 'https://api.hardcover.app/v1/graphql'
+    cached_cover_url_is_reliable = True
 
     def is_configured(self):
         return bool(self.prefs.get('api_key'))
@@ -30,12 +30,9 @@ class HardcoverMetadata(Source):
             self._prefs.defaults = PREFS_DEFAULTS
         return self._prefs
 
-    cached_cover_url_is_reliable = True
-
     def get_cached_cover_url(self, identifiers):
-        url = self.cached_identifier_to_cover_url(
+        return self.cached_identifier_to_cover_url(
             identifiers.get('hardcover', ''))
-        return url
 
     def config_widget(self):
         from calibre_plugins.hardcover_metadata.config import ConfigWidget
@@ -46,13 +43,13 @@ class HardcoverMetadata(Source):
 
     def identify(self, log, result_queue, abort, title=None, authors=None,
                  identifiers=None, timeout=30):
-        from calibre_plugins.hardcover_metadata.worker import identify
+        from calibre_plugins.hardcover_metadata.identify import identify
         return identify(self, log, result_queue, abort, title, authors,
                         identifiers, timeout)
 
     def download_cover(self, log, result_queue, abort, title=None, authors=None,
                        identifiers=None, timeout=30, get_best_cover=False):
-        from calibre_plugins.hardcover_metadata.worker import download_cover
+        from calibre_plugins.hardcover_metadata.covers import download_cover
         return download_cover(self, log, result_queue, abort, title, authors,
                               identifiers, timeout, get_best_cover)
 

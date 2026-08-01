@@ -6,7 +6,12 @@ import zipfile
 PLUGIN_FILES = [
     '__init__.py',
     'config.py',
-    'worker.py',
+    'api.py',
+    'ranking.py',
+    'metadata.py',
+    'search.py',
+    'identify.py',
+    'covers.py',
     'plugin-import-name-hardcover_metadata.txt',
 ]
 

@@ -57,6 +57,7 @@ DEFAULT_GENRE_MAPPINGS = {
 PREFS_DEFAULTS = {
     'api_key': '',
     'preferred_edition': 'ebook',  # ebook, physical, audiobook
+    'preferred_language': 'English',
     'use_original_pub_date': True,
     'genre_mappings': DEFAULT_GENRE_MAPPINGS,
 }
@@ -110,6 +111,14 @@ class ConfigWidget(QWidget):
         pref_layout.addWidget(self.edition_combo)
         edition_layout.addLayout(pref_layout)
 
+        lang_layout = QHBoxLayout()
+        lang_layout.addWidget(QLabel('Preferred cover language:'))
+        self.language_edit = QLineEdit()
+        self.language_edit.setText(self.prefs['preferred_language'])
+        self.language_edit.setPlaceholderText('English')
+        lang_layout.addWidget(self.language_edit)
+        edition_layout.addLayout(lang_layout)
+
         layout.addWidget(edition_group)
 
         # Publication Date
@@ -150,6 +159,7 @@ class ConfigWidget(QWidget):
     def save_settings(self):
         self.prefs['api_key'] = self.api_key_edit.text().strip()
         self.prefs['preferred_edition'] = self.edition_combo.currentText()
+        self.prefs['preferred_language'] = self.language_edit.text().strip() or 'English'
         self.prefs['use_original_pub_date'] = self.use_original_date_cb.isChecked()
 
         # Parse genre mappings
