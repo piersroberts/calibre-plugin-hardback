@@ -132,13 +132,18 @@ def _get_books_by_ids(api_key, book_ids, log, timeout=30):
 
 
 def _get_book_covers(api_key, book_id, log, timeout=30):
-    """Get book and edition cover images only (lightweight query)."""
+    """Get book and edition cover images only (lightweight query).
+    Excludes audiobook editions (reading_format_id=2) since their covers
+    are typically different artwork."""
     gql = '''
     query GetBookCovers($id: Int!) {
         books(where: {id: {_eq: $id}}) {
             id
             cached_image
-            editions(order_by: {users_count: desc}) {
+            editions(
+                where: {reading_format_id: {_nin: [2]}}
+                order_by: {users_count: desc}
+            ) {
                 id
                 cached_image
             }
@@ -498,10 +503,10 @@ def _build_metadata(book_data, plugin, log):
 
     if cover_url:
         mi.has_cover = True
-        # Cache the cover URL so Calibre can find it via get_cached_cover_url
+        # Cache the cover URL using Calibre's built-in mechanism
         slug = book_data.get('slug', '')
         if slug:
-            plugin.cache_cover_url(slug, cover_url)
+            plugin.cache_identifier_to_cover_url(slug, cover_url)
 
     # Source relevance
     mi.source_relevance = 0
@@ -648,10 +653,6 @@ def download_cover(plugin, log, result_queue, abort, title=None, authors=None,
     if not book_data:
         return None
 
-    # Collect all unique cover URLs from the book and its editions
-    cover_urls = []
-    seen_urls = set()
-
     def _extract_cover_url(cached_image):
         if not cached_image:
             return None
@@ -664,48 +665,23 @@ def download_cover(plugin, log, result_queue, abort, title=None, authors=None,
             return cached_image.get('url')
         return None
 
-    # Book-level cover first (usually the default/best cover)
+    # Use the book-level cover — this is Hardcover's chosen display cover
     book_url = _extract_cover_url(book_data.get('cached_image'))
-    if book_url:
-        cover_urls.append(book_url)
-        seen_urls.add(book_url)
-
-    # Then all edition covers
-    for edition in book_data.get('editions', []):
-        if abort.is_set():
-            return None
-        url = _extract_cover_url(edition.get('cached_image'))
-        if url and url not in seen_urls:
-            cover_urls.append(url)
-            seen_urls.add(url)
-
-    if not cover_urls:
+    if not book_url:
+        log.error('No cover URL found for book')
         return None
 
-    # If only best cover requested, just download the first one
-    if get_best_cover:
-        cover_urls = cover_urls[:1]
+    log('Downloading Hardcover book cover: %s' % book_url)
 
-    # Download covers, deduplicating by actual pixel dimensions to avoid
-    # Calibre FileExistsError (Calibre names files by plugin+dimensions+format)
     from calibre import browser
-    from calibre.utils.img import image_from_data
     br = browser()
-    seen_dimensions = set()
-    for url in cover_urls[:20]:
-        if abort.is_set():
-            return None
-        try:
-            response = br.open_novisit(url, timeout=timeout)
-            cover_data = response.read()
-            if cover_data:
-                # Check actual image dimensions
-                img = image_from_data(cover_data)
-                dims = (img.width(), img.height())
-                if dims not in seen_dimensions:
-                    seen_dimensions.add(dims)
-                    result_queue.put((plugin, cover_data))
-        except Exception as e:
-            log.error('Failed to download cover from %s: %s' % (url, str(e)))
+
+    try:
+        response = br.open_novisit(book_url, timeout=timeout)
+        cover_data = response.read()
+        if cover_data:
+            result_queue.put((plugin, cover_data))
+    except Exception as e:
+        log.error('Failed to download book cover: %s' % str(e))
 
     return None

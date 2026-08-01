@@ -30,22 +30,12 @@ class HardcoverMetadata(Source):
             self._prefs.defaults = PREFS_DEFAULTS
         return self._prefs
 
-    @property
-    def cover_url_cache(self):
-        if not hasattr(self, '_cover_url_cache'):
-            self._cover_url_cache = {}
-        return self._cover_url_cache
-
-    def cache_cover_url(self, hardcover_slug, url):
-        self.cover_url_cache[hardcover_slug] = url
+    cached_cover_url_is_reliable = True
 
     def get_cached_cover_url(self, identifiers):
-        hardcover_id = identifiers.get('hardcover')
-        if hardcover_id:
-            return self.cover_url_cache.get(hardcover_id)
-        return None
-
-    cached_cover_url_is_reliable = True
+        url = self.cached_identifier_to_cover_url(
+            identifiers.get('hardcover', ''))
+        return url
 
     def config_widget(self):
         from calibre_plugins.hardcover_metadata.config import ConfigWidget
