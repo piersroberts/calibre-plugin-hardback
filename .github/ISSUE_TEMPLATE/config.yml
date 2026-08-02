@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Hardcover API Docs
+    url: https://docs.hardcover.app/api/getting-started/
+    about: Official Hardcover API documentation
+  - name: Hardcover Discord
+    url: https://discord.gg/edGpYN8ym8
+    about: Ask questions about the Hardcover API in the #api channel

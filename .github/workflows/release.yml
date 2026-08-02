@@ -1,0 +1,59 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - '__init__.py'
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Extract version from __init__.py
+        id: extract
+        run: |
+          VERSION=$(python3 -c "
+          import re
+          with open('__init__.py') as f:
+              match = re.search(r'version\s*=\s*\((\d+),\s*(\d+),\s*(\d+)\)', f.read())
+              print(f'{match.group(1)}.{match.group(2)}.{match.group(3)}')
+          ")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Check if version changed
+        id: check
+        run: |
+          git diff HEAD~1 HEAD -- __init__.py | grep -q 'version\s*=' && echo "changed=true" >> "$GITHUB_OUTPUT" || echo "changed=false" >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: check-version
+    if: needs.check-version.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Build plugin zip
+        run: python build.py
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.check-version.outputs.version }}
+          name: v${{ needs.check-version.outputs.version }}
+          files: hardcover-metadata.zip
+          generate_release_notes: true
