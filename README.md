@@ -1,6 +1,6 @@
 # Hardcover Metadata Plugin for Calibre
 
-A Calibre metadata source plugin that fetches book metadata and covers from [Hardcover](https://hardcover.app) using their GraphQL API.
+A Calibre metadata source plugin that fetches book metadata and covers from [Hardcover](https://hardcover.app/join?referrer_id=139573) using their GraphQL API.
 
 ## Features
 
