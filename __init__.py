@@ -6,7 +6,7 @@ class HardcoverMetadata(Source):
     description = 'Downloads metadata and covers from Hardcover (hardcover.app)'
     supported_platforms = ['windows', 'osx', 'linux']
     author = 'Piers'
-    version = (1, 0, 0)
+    version = (1, 1, 0)
     minimum_calibre_version = (5, 0, 0)
 
     capabilities = frozenset(['identify', 'cover'])
